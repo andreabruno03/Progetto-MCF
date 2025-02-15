@@ -18,6 +18,6 @@ Lo script utente.py invece fa sì che i parametri che definiscono l'oggetto tomo
 in questo file viene chiamata la funzione simula che restituisce il grafico della sorgente ricostruita.
 Quando si inserisce la stringa che identifica il radiofarmaco usato si possono scegliere due opzioni:
   - *"F18"* per il Fluoro 18;
-  - *"G68"* per il Gallio 68; \
+  - *"G68"* per il Gallio 68; 
 
 se si inserisce una stringa differente viene stampato un messaggio di errore e l'esecuzione del programma non funziona.
