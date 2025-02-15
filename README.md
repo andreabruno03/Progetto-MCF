@@ -1,6 +1,6 @@
 # Organizzazione progetto
 
-## '''Pet.py'''
+## Pet.py
 Il modulo pet.py è alla base di ciascuno script, in esso si definiscono le classi e le funzioni che permettono di implementare la simulazione
 di un esame pet:
 - classe tomografo: definisce l'oggetto che contiene i parametri costruttivi e operativi del sistema;
@@ -10,7 +10,7 @@ di un esame pet:
 
 ## Moduli Confronto
 Gli altri script python rappresentano invece degli esempi di misura diagnostica in cui si sono variati i parametri operativi e costruttivi:
-- Confronto_rilevatori.py: si confronta il risultato diagnostico di due sistemi con parametri identici ad eccezione del numero di rilevatori;
+- '''Confronto_rilevatori.py''': si confronta il risultato diagnostico di due sistemi con parametri identici ad eccezione del numero di rilevatori;
 - Confronto_risoluzione.py: si confronta il risultato diagnostico di due sistemi con parametri identici ad eccezione della risoluzione temporale.
 
 ## Modulo con input dati dall' utente
