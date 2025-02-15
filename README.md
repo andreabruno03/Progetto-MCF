@@ -1,4 +1,4 @@
-# Organizzazione progetto
+# Organizzazione del progetto
 
 ## Pet.py
 Il modulo **pet.py** è alla base di ciascuno script, in esso si definiscono le classi e le funzioni che permettono di implementare la simulazione
