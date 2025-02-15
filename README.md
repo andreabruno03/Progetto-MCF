@@ -20,4 +20,4 @@ Quando si inserisce la stringa che identifica il radiofarmaco usato si possono s
   - *"F18"* per il Fluoro 18;
   - *"G68"* per il Gallio 68; 
 
-se si inserisce una stringa differente viene stampato un messaggio di errore e l'esecuzione del programma non funziona.
+se si inserisce una stringa differente viene stampato un messaggio di errore e l'esecuzione del programma non avviene correttamente.
