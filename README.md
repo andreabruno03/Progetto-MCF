@@ -20,8 +20,12 @@ Gli altri script python rappresentano invece degli esempi di misura diagnostica 
 ## Modulo con input dati dall' utente
 Lo script utente.py invece fa sì che i parametri che definiscono l'oggetto tomografo, da cui parte la simulazione, siano inseriti dall'utente, automaticamente
 in questo file viene chiamata la funzione simula che restituisce il grafico della sorgente ricostruita.
-Quando si inserisce la stringa che identifica il radiofarmaco usato si possono scegliere due opzioni:
-  - *"F18"* per il Fluoro 18;
-  - *"G68"* per il Gallio 68; 
-
-se si inserisce una stringa differente viene stampato un messaggio di errore e l'esecuzione del programma non avviene correttamente.
+I parametri che si possono passare al programma sono:
+- **numero di rilevatori**: non può essere un valore negativo o non intero;
+- **raggio**: rappresenta il raggio della circonferenza e non può essere un numero negativo;
+- **coordinate sorgente**: rappresentano la posizione della sorgente rispetto al centro della circonferenza di rilevatori, sia il valore   inerente all'ascissa che quello inerente all'ordinata non possono essere maggiori del raggio inserito precedentemente.
+- **risoluzione**: rappresenta la risoluzione temporale dei rilevatori, non può essere un valore negativo ed è espressa in secondi;
+- **tempo**: rappresenta la durata dell'esame, è espresso in minuti e non può essere un valore negativo;
+- **radiofarmaco**: rappresenta il tipo di radiofarmaco usato nella simulazione, sono possibili solo due valori per questa stringa:
+    - "*F18*" per il Fluro 18;
+    - "*G68*" per il Gallio 68. 
