@@ -17,7 +17,7 @@ tomography precedentemente importato. I parametri che definisco l'oggetto tomogr
 vengono inseriti dall'utente.
 '''
 print('-- Questa simulazione permette di inserire i paramateri di un sistema PET -- \n ')
-N = input('Selezionare numero rilevatori: ')
+N = input('Selezionare numero rivelatori: ')
 R = input('Selezionare raggio circonferenza: ')
 X, Y = input('Coordinate della sorgente \n x: ',), input( '\n y: ')
 dt = input('Risoluzione temporale (secondi): ')
