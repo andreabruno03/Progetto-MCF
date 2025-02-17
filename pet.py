@@ -7,9 +7,10 @@ import math
 import matplotlib.colors as mcolors
 from scipy.stats import gaussian_kde
 
+c = 299792458 #velocità della luce
+
 class tomografo:
     '''
-
     La classe ha cinque parametri che la definiscono:
 
     nrilev: numero di rilevatori del tomografo considerato
@@ -29,17 +30,39 @@ class tomografo:
     '''
     def __init__(self, nrilev, raggio, posizione_x, posizione_y, risoluzione, tempo, radiof):
         self.nrilev = nrilev
+        if nrilev < 0:
+            raise ValueError('Valore numero rilevatori non supportato')
         self.raggio = raggio
+        if raggio < 0:
+            raise ValueError('Valore raggio non valido')
         self.posizione_x = posizione_x
+        if posizione_x >= raggio:
+            raise ValueError('Coordinate sorgente non valide')
         self.posizione_y = posizione_y
+        if posizione_y >= raggio:
+            raise ValueError('Coordinate sorgente non valide')
         self.risoluzione = risoluzione
+        if risoluzione < 0:
+            raise ValueError('Valore risoluzione non valido')
         self.tempo = tempo
+        if tempo < 0:
+            raise ValueError('Valore di tempo non valido')
         self.radiof = radiof
     def __str__(self):
         return '-- Tomografo -- \n Numero rilevatori: {:} \n Raggio: {:} \n Posizione sorgente: {:} \n Risoluzione temporale: {:} \n Tempo: {:}'.format(self.nrilev, self.raggio, self.posizione_x , self.risoluzione, self.tempo)
     def __centr__(self):
         res = self.posizione
         return res
+def numero_eventi(t):
+    if t.radiof == 'F18':
+        nevents =  1e5 * pow(math.e, - t.tempo / (109*60)) 
+        return nevents
+    if t.radiof == 'G68':
+        nevents =  1e5 * pow(math.e, -t.tempo / (68*60)) 
+        return nevents
+    else:
+        raise ValueError('Stringa per radiofarmaco non supportata')
+    
 
 def punti_emissione(t):
     '''
@@ -57,10 +80,6 @@ def punti_emissione(t):
     di nuclei di un elemento radioattivo che decadono nell'unità di tempo, considerando un'attività iniziale
     di 1e6 Bq e un intervallo di tempo pari a quello della misura diagnostica.
     '''
-    if t.radiof == 'F18':
-        nevents =  1e5 * pow(math.e, - t.tempo / (109*60)) 
-    if t.radiof == 'G68':
-        nevents =  1e5 * pow(math.e, -t.tempo / (68*60)) 
     theta_s = math.atan2(t.posizione_y, t.posizione_x) #angolo sorgente rispetto al centro del sistema
     theta_s = math.degrees(theta_s)
     if theta_s < 0:
@@ -73,6 +92,7 @@ def punti_emissione(t):
     di un positrone, il quale non appena incontra un elettrone annichilisce rilasciando due fotoni da 511 KeV che si 
     propagano in direzioni diametralmente opposte.
     '''
+    nevents = numero_eventi(t)
 
     theta_start = np.random.uniform(0, 360, int(nevents))
 
@@ -93,7 +113,148 @@ def punti_emissione(t):
     '''
 
 
-    m = np.tan(theta_start)
+    m = np.tan((theta_start))
+    # coefficienti per risolvere sistema
+    A = np.power(m, 2) + 1
+    B = 2 * m * (- m * t.posizione_x + t.posizione_y)
+    C = pow(t.posizione_y, 2) - 2 * m * t.posizione_x * t.posizione_y - pow(t.raggio, 2) + (np.power(m, 2) * pow(t.posizione_x, 2))
+    delta = np.power(B, 2) - (4 * A * C)
+    #array da riempire
+    x1 = np.zeros(len(theta_start))
+    y1 = np.zeros(len(theta_start))
+    x2 = np.zeros(len(theta_start))
+    y2 = np.zeros(len(theta_start))
+    for i in range(0, len(theta_start)):
+        if (t.posizione_x == 0) and (t.posizione_y == 0):
+            if (theta_start[i] <= 45):
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = - math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2)) 
+            elif (45 < theta_start[i] <= 135):
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = - math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2))
+            elif (135 < theta_start[i] <= 225):
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = - math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2)) 
+            else:
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = - math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2))
+        else:
+            if (theta_start[i] <= theta_s):
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = - math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2)) 
+            elif (theta_s < theta_start[i] <= (180-theta_s)):
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = - math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2))
+            elif ((180-theta_s) < theta_start[i] <= (180+theta_s)):
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = - math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2)) 
+            else:
+                x1[i] = (-B[i] + math.sqrt(delta[i])) / (2*A[i])
+                x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
+                y1[i] = - math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
+                y2[i] = math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2))
+    
+    theta_ril1 = np.arctan2(y1, x1)
+    theta_ril1 = np.degrees(theta_ril1)
+    theta_ril1[theta_ril1 < 0] += 360
+
+    theta_ril2 = np.arctan2(y2, x2)
+    theta_ril2 = np.degrees(theta_ril2)
+    theta_ril2[theta_ril2 < 0] += 360
+
+    theta_ril = np.append(theta_ril1, theta_ril2)
+
+
+    # considerando il numero di rilevatori la risoluzione è data da
+    ris = 360 / t.nrilev
+    # quantizzazione array degli angoli
+    theta_eff1 = np.round(theta_ril1 / ris) * ris
+    theta_eff2 = np.round(theta_ril2 / ris) * ris
+
+    theta_eff = np.append(theta_eff1, theta_eff2)
+
+    '''
+    Definizione tempi
+    Il tempo di arrivo dei fotoni dipende naturalmente dalla distanza tra il punto di arrivo considerato
+    e la sorgente.
+    '''
+    x1_eff = t.raggio * np.cos((theta_eff1))
+    y1_eff = t.raggio * np.sin((theta_eff1))
+
+    x2_eff = t.raggio * np.cos((theta_eff2))
+    y2_eff = t.raggio * np.sin((theta_eff2))
+
+    time1 = np.sqrt(np.power(x1 - t.posizione_x, 2) + np.power(y1 - t.posizione_y, 2)) / c 
+    time2 = np.sqrt(np.power(x2 - t.posizione_x, 2) + np.power(y2 - t.posizione_y, 2)) / c
+
+    time1 = np.round(time1 / t.risoluzione) * t.risoluzione
+    time2 = np.round(time2 / t.risoluzione) * t.risoluzione
+
+    delta_time = np.random.normal(8e-9, 3e-9, len(theta_start))
+
+    time1 = time1 + delta_time
+    time2 = time2 + delta_time
+    '''
+    Seconda parte: Analisi dei risultati
+
+    Rilevatore
+    Una volta simulato il fenomeno fisico di annichilazione bisogna osservare come il rilevatore riesce
+    a ricostruire ciò che sta succedendo.  Per ciascuna coppia di fotoni si è quindi calcolata la 
+    differenza di percorso tra i due fotoni, la metà di questo valore rappresenta di quanto è spostato
+    il punto di emissione rispetto al punto medio del segmento che unisce i due rilevatori.
+
+    Una volta calcolato tale spostamento si sono ricavate le componenti lungo x e lungo y di quest'ultimo
+    usando l'angolo di inclinazione della retta che passa per i due rilevatori coinvolti.
+
+    '''
+
+    delta_s = (time1 - time2) * c / 2
+    delta_y = y1_eff - y2_eff
+    delta_x = x1_eff - x2_eff
+
+    angolo = np.arctan2(delta_y, delta_x)
+
+    x_s = (delta_s) * np.cos(angolo - (math.pi / 2))
+    y_s =  (delta_s) * np.sin(angolo - (math.pi / 2))
+
+    x_m = (x1 + x2) / 2
+    y_m = (y1 + y2) / 2
+
+    x_a = x_m - x_s
+    y_a = y_m - y_s
+
+
+    return x_a, y_a
+def grafici_controllo(t):
+    '''
+    La funzione non aggiunge nullo di nuovo alla precedente, ma permette di visualizzare
+    la distribuzione angolare dei fotoni e i loro punti di intersezione con la circonferenza dei rilevatori
+    '''
+
+    theta_s = math.atan2(t.posizione_y, t.posizione_x) #angolo sorgente rispetto al centro del sistema
+    theta_s = math.degrees(theta_s)
+    if theta_s < 0:
+        theta_s += 360
+
+    nevents = numero_eventi(t)
+
+    theta_start = np.random.uniform(0, 360, int(nevents))
+    
+    m = np.tan((theta_start))
     # coefficienti per risolvere sistema
     A = np.power(m, 2) + 1
     B = 2 * m * (- m * t.posizione_x + t.posizione_y)
@@ -148,7 +309,7 @@ def punti_emissione(t):
                 x2[i] = (-B[i] - math.sqrt(delta[i])) / (2*A[i])
                 y1[i] = - math.sqrt(pow(t.raggio, 2) - pow(x1[i], 2))
                 y2[i] = math.sqrt(pow(t.raggio, 2) - pow(x2[i], 2))
-
+    
     theta_ril1 = np.arctan2(y1, x1)
     theta_ril1 = np.degrees(theta_ril1)
     theta_ril1[theta_ril1 < 0] += 360
@@ -157,69 +318,43 @@ def punti_emissione(t):
     theta_ril2 = np.degrees(theta_ril2)
     theta_ril2[theta_ril2 < 0] += 360
 
+    theta_ril = np.append(theta_ril1, theta_ril2)
+
+
     # considerando il numero di rilevatori la risoluzione è data da
     ris = 360 / t.nrilev
     # quantizzazione array degli angoli
     theta_eff1 = np.round(theta_ril1 / ris) * ris
     theta_eff2 = np.round(theta_ril2 / ris) * ris
 
-    theta_ril = np.append(theta_ril1, theta_ril2)
     theta_eff = np.append(theta_eff1, theta_eff2)
 
-    '''
-    Definizione tempi
-    Il tempo di arrivo dei fotoni dipende naturalmente dalla distanza tra il punto di arrivo considerato
-    e la sorgente.
-    '''
-    x1_eff = t.raggio * np.cos(theta_eff1)
-    y1_eff = t.raggio * np.sin(theta_eff1)
+    fig, ax = plt.subplots(3, 1, figsize=(10, 8))
+    ax[0].set_title('Distribuzione angolare fotoni \n  Numero Rilevatori: {:} -- Risoluzione: {:}s -- Durata Misura: {:}min -- \n Radiofarmaco :{:}'.format(t.nrilev, t.risoluzione, t.tempo, t.radiof), 
+                    color='darkred')
+    n1, bins1, patches1 = ax[1].hist(theta_ril, 100, [0, 360], label='Angolo rilevatori')
+    n2, bins2, patches2 = ax[2].hist(theta_eff, 100, [0, 360], label='Angolo rilevatori con correzione per risoluzione')
+    n3, bins3, patches3 = ax[0].hist(theta_start, 100, [0, 360], label='Angolo di partenza dalla sorgente')
+    ax[0].legend()
+    ax[1].legend()
+    ax[2].legend()
+    ax[0].set_xlabel(r'$\theta_{start}$')
+    ax[1].set_xlabel(r'$\theta_{rilevatori}$')
+    ax[2].set_xlabel(r'$\theta_{risoluzione}$')
+    plt.subplots_adjust(hspace=0.3)
+    plt.show()
+    
+    fig, ax = plt.subplots(figsize=(10, 8))
+    plt.scatter(x1, y1, label='Punti fotone 1', alpha=0.5)
+    plt.scatter(x2, y2, label='Punti fotone 2', alpha=0.5)
+    circle_ril = plt.Circle((0, 0), t.raggio, fill=False, label='Circonferenza rilevatori')
+    ax.add_patch(circle_ril)
+    plt.legend()
+    plt.title('Distribuzione dei fotoni sui rilevatori \n Numero rilevatori: {:} -- Risoluzione: {:}s'.format(t.nrilev, t.risoluzione))
+    plt.xlabel('X(m)')
+    plt.ylabel('Y(m)')
+    plt.show()
 
-    x2_eff = t.raggio * np.cos(theta_eff2)
-    y2_eff = t.raggio * np.sin(theta_eff2)
-
-    time1 = np.sqrt(np.power(x1 - t.posizione_x, 2) + np.power(y1 - t.posizione_y, 2)) / c 
-    time2 = np.sqrt(np.power(x2 - t.posizione_x, 2) + np.power(y2 - t.posizione_y, 2)) / c
-
-    time1 = np.round(time1 / t.risoluzione) * t.risoluzione
-    time2 = np.round(time2 / t.risoluzione) * t.risoluzione
-
-    delta_time = np.random.normal(8e-8, 3e-9, len(theta_start))
-
-    time1 = time1 + delta_time
-    time2 = time2 + delta_time
-    '''
-    Seconda parte: Analisi dei risultati
-
-    Rilevatore
-    Una volta simulato il fenomeno fisico di annichilazione bisogna osservare come il rilevatore riesce
-    a ricostruire ciò che sta succedendo.  Per ciascuna coppia di fotoni si è quindi calcolata la 
-    differenza di percorso tra i due fotoni, la metà di questo valore rappresenta di quanto è spostato
-    il punto di emissione rispetto al punto medio del segmento che unisce i due rilevatori.
-
-    Una volta calcolato tale spostamento si sono ricavate le componenti lungo x e lungo y di quest'ultimo
-    usando l'angolo di inclinazione della retta che passa per i due rilevatori coinvolti.
-
-    '''
-
-    delta_s = (time1 - time2) * c / 2
-    delta_y = y1_eff - y2_eff
-    delta_x = x1_eff - x2_eff
-
-    c = np.arctan2(delta_y, delta_x)
-    c = np.degrees(c)
-    c[c < 0] += 360
-
-    x_s = (delta_s) * np.cos(c)
-    y_s =  (delta_s) * np.sin(c)
-
-    x_m = (x1 + x2) / 2
-    y_m = (y1 + y2) / 2
-
-    x_a = x_m - x_s
-    y_a = y_m - y_s
-
-
-    return x_a, y_a
 def simula(t):
     '''
     La funzione permette di avere una rappresentazione grafica della sorgente
@@ -234,9 +369,9 @@ def simula(t):
         # nel titolo viene riportata anche la posizione in cui si è posta la sorgente in fase di simulazione
         circle_ril = plt.Circle((0, 0), t.raggio, fill=False, label='Circonferenza rilevatori')
         plt.title('Ricostruzione sorgente - Posizione sorgente: ({:}, {:})'.format(t.posizione_x, t.posizione_y))
-        plt.scatter(x_a, y_a, c='mediumblue', label='Punti di emissione fotoni')
-        plt.legend(fontsize=15)
+        plt.scatter(x_a, y_a, c='mediumblue', cmap='viridis', label='Punti di emissione fotoni')
         ax.add_patch(circle_ril)
+        plt.legend(fontsize=15)
         plt.xlabel('X(m)')
         plt.ylabel('Y(m)')
         plt.show()
@@ -246,10 +381,11 @@ def simula(t):
         z = gaussian_kde(xy)(xy)
         fig, ax = plt.subplots(figsize=(10, 8))
         circle_ril = plt.Circle((0, 0), t.raggio, fill=False, label='Circonferenza rilevatori')
-        plt.title('Ricostruzione sorgente - Posizione sorgente: ({:}, {:})'.format(t.posizione_x, t.posizione_y))
-        plt.scatter(x_a, y_a, c=z, label='Punti di emissione fotoni')
-        plt.legend(fontsize=15)
+        plt.title('Ricostruzione sorgente - Posizione sorgente: ({:}, {:}) \n Numero rilevatori: {:} -- Risoluzione: {:}s'.format(t.posizione_x, t.posizione_y, t.nrilev, t.risoluzione))
+        plt.scatter(x_a, y_a, c=z, cmap='viridis', label='Punti di emissione fotoni')
         ax.add_patch(circle_ril)
+        plt.legend(fontsize=15)
         plt.xlabel('X(m)')
         plt.ylabel('Y(m)')
+        plt.colorbar(label='Densità')
         plt.show()
