@@ -10,7 +10,7 @@ Il modulo **pet.py** è alla base di ciascuno script, in esso si definiscono le 
 - funzione punti_emissione: restituisce le coordinate (x, y) rispetto al centro del sistema dei punti di emissione dei
   fotoni ricostruiti a partire dal segnale sui rilevatori;
 - funzione simula: a partire dai dati ottenuti da punti_emissione fornisce una ricostruzione grafica della sorgente.
-- funzione grafici_controllo: permette di visualizzare, là dove necessario, la distribuzione angolare dei fotoni e i punti di intersezione con la circonferenza di rilevatori, così da accertarsi che non vi siano problemi in fase di generazione.
+- funzione grafici_controllo: permette di visualizzare, là dove necessario, la distribuzione angolare dei fotoni e i punti di intersezione con la circonferenza di rilevatori, così da accertarsi che non vi siano problemi in fase di generazione dei fasci di particelle.
 
 ## Moduli Confronto
 Gli altri script python rappresentano invece degli esempi di misura diagnostica in cui si sono variati i parametri operativi e costruttivi:
